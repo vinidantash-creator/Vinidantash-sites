@@ -1,0 +1,30 @@
+ECOBAIRRO — PRÓXIMOS PASSOS
+
+1) SUPABASE
+- Confirme que o SQL já foi executado (você já viu "Success. No rows returned").
+- Em Authentication > Providers, deixe Email habilitado.
+- Não use nem publique secret/service_role key.
+
+2) CONFIGURAÇÃO
+- Este pacote já está configurado com a Project URL e a publishable key do seu projeto.
+- Não compartilhe novas secret keys.
+
+3) TESTE LOCAL
+- Descompacte o ZIP.
+- Abra index.html com uma extensão de servidor local (por exemplo, Live Server no VS Code).
+- Crie uma conta de teste.
+- Confirme o e-mail, caso o Supabase peça confirmação.
+- Preencha o perfil e registre uma leitura.
+
+4) VERIFICAÇÃO NO SUPABASE
+- Table Editor > profiles: deve aparecer o perfil.
+- Table Editor > consumption_readings: deve aparecer a leitura.
+- O morador deve conseguir ler apenas seus próprios registros.
+
+5) IMPORTANTE SOBRE A SECRET KEY
+- A secret key enviada anteriormente deve ser REVOGADA/ROTACIONADA no Supabase.
+- Nunca coloque secret/service_role no HTML, JS ou GitHub.
+
+6) PRÓXIMA ETAPA
+- Depois que o teste local funcionar, publicar em hospedagem estática (Vercel, Netlify ou GitHub Pages).
+- Em seguida, criar a área administrativa protegida para relatórios agregados/anônimos.

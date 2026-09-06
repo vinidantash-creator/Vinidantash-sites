@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>EcoBairro — Gestão de Água e Energia</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">🌱 EcoBairro</div>
+    <div class="tag">Consumo inteligente. Comunidade mais eficiente.</div>
+  </header>
+  
+  <main>
+    <section id="auth" class="card auth-card">
+      <h1>Entrar no EcoBairro</h1>
+      <p>Crie sua conta ou entre para registrar seu consumo.</p>
+      
+      <!-- Formulário adicionado para resolver o aviso DOM do Chromium -->
+      <form id="authForm" onsubmit="event.preventDefault();">
+        <div class="grid2">
+          <div>
+            <label>E-mail<input id="email" type="email" autocomplete="username" placeholder="voce@email.com"></label>
+          </div>
+          <div>
+            <label>Senha<input id="password" type="password" autocomplete="current-password" placeholder="••••••••"></label>
+          </div>
+        </div>
+        <div class="actions">
+          <button type="button" id="login">Entrar</button>
+          <button type="button" id="signup" class="secondary">Criar conta</button>
+        </div>
+      </form>
+      
+      <p id="authMsg" class="msg"></p>
+    </section>
+
+    <section id="app" class="hidden">
+      <div class="card welcome">
+        <div>
+          <h1>Meu EcoBairro</h1>
+          <p id="userLabel"></p>
+        </div>
+        <button id="logout" class="secondary">Sair</button>
+      </div>
+      
+      <div class="grid4 kpis">
+        <div><span>Energia</span><strong id="kEnergy">—</strong></div>
+        <div><span>Água</span><strong id="kWater">—</strong></div>
+        <div><span>Energia/pessoa</span><strong id="kEnergyP">—</strong></div>
+        <div><span>Água/pessoa</span><strong id="kWaterP">—</strong></div>
+      </div>
+      
+      <div class="grid2">
+        <section class="card">
+          <h2>Registrar consumo</h2>
+          <form id="consForm">
+            <label>Mês<input id="month" type="month" required></label>
+            <div class="grid2">
+              <label>Energia (kWh)<input id="energy" type="number" min="0" step="0.01" required></label>
+              <label>Água (m³)<input id="water" type="number" min="0" step="0.01" required></label>
+            </div>
+            <div class="grid2">
+              <label>Valor energia (R$)<input id="energyCost" type="number" min="0" step="0.01"></label>
+              <label>Valor água (R$)<input id="waterCost" type="number" min="0" step="0.01"></label>
+            </div>
+            <button>Salvar leitura</button>
+            <p id="consMsg" class="msg"></p>
+          </form>
+        </section>
+        
+        <section class="card">
+          <h2>Meu perfil</h2>
+          <label>Código anônimo<input id="anonCode" placeholder="EB-XXXXXX"></label>
+          <label>Nº de moradores<input id="people" type="number" min="1" value="1"></label>
+          <label>Meta de energia (kWh/mês)<input id="energyTarget" type="number" min="0" step="0.01" value="210"></label>
+          <label>Meta de água (m³/mês)<input id="waterTarget" type="number" min="0" step="0.01" value="12"></label>
+          <button id="saveProfile">Salvar perfil</button>
+          <p id="profileMsg" class="msg"></p>
+        </section>
+      </div>
+      
+      <section class="card">
+        <h2>Histórico</h2>
+        <div class="tablewrap">
+          <table>
+            <thead>
+              <tr><th>Mês</th><th>Energia</th><th>Água</th><th>Status</th></tr>
+            </thead>
+            <tbody id="history"></tbody>
+          </table>
+        </div>
+      </section>
+      
+      <section class="card privacy">
+        <h2>Compartilhamento anônimo</h2>
+        <p>Você controla o compartilhamento. Seus dados pessoais e sua conta não são enviados ao painel comunitário. Ao optar por compartilhar, o sistema disponibiliza apenas indicadores anonimizados para análise.</p>
+        <label class="switch">
+          <input id="shareConsent" type="checkbox">
+          <span>Quero compartilhar meus dados de consumo de forma anônima.</span>
+        </label>
+        <button id="saveConsent" class="secondary">Salvar preferência</button>
+        <p id="shareMsg" class="msg"></p>
+      </section>
+      
+      <section class="card">
+        <h2>Diagnóstico</h2>
+        <div id="diagnosis" class="diagnosis">Registre uma leitura para receber um diagnóstico.</div>
+      </section>
+    </section>
+  </main>
+  
+  <!-- Scripts atualizados na ordem correta -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="config.js"></script>
+  <script src="supabaseClient.js"></script>
+</body>
+</html>

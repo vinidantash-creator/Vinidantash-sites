@@ -1,0 +1,22 @@
+ECOBAIRRO V2 — DEPLOY
+
+1) Supabase
+- Crie um projeto em supabase.com.
+- Execute o arquivo supabase_schema.sql no SQL Editor.
+- Em Authentication, configure o método de login desejado.
+
+2) Configuração do site
+- Renomeie config.example.js para config.js.
+- Cole a URL do projeto e a Publishable Key.
+
+3) Hospedagem
+- Suba index.html, style.css, app.js e config.js em uma hospedagem estática.
+- Exemplos: Vercel, Netlify ou GitHub Pages.
+
+4) Segurança
+- Não coloque uma Secret Key/service_role no navegador.
+- Mantenha RLS habilitado e teste cada política antes de produção.
+
+5) Administração
+- A próxima versão deve ter uma área administrativa protegida.
+- O administrador deve consumir apenas a camada anonimizável, usando uma API/Edge Function protegida.
