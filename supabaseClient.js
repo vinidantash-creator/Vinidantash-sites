@@ -158,9 +158,12 @@ function render(rows, p){
   });
   
   // --- Motor do Gráfico Chart.js ---
-  const ctx = $('graficoConsumo');
-  if(ctx && rows.length > 0) {
+// --- Motor do Gráfico Chart.js ---
+  const canvasEl = $('graficoConsumo');
+  if(canvasEl && rows.length > 0) {
+    const ctx = canvasEl.getContext('2d'); // Força a renderização 2D
     if (chartInstance) chartInstance.destroy();
+    
     const plotRows = rows.slice().reverse(); 
     const labels = plotRows.map(r => r.period.slice(0, 7));
     const dataEnergy = plotRows.map(r => r.energy_kwh);
@@ -171,8 +174,8 @@ function render(rows, p){
       data: {
         labels: labels,
         datasets: [
-          { label: 'Energia (kWh)', data: dataEnergy, borderColor: '#10b981', backgroundColor: 'transparent', tension: 0.3 },
-          { label: 'Água (m³)', data: dataWater, borderColor: '#3b82f6', backgroundColor: 'transparent', tension: 0.3 }
+          { label: 'Energia (kWh)', data: dataEnergy, borderColor: '#10b981', backgroundColor: 'rgba(16, 185, 129, 0.1)', fill: true, tension: 0.3 },
+          { label: 'Água (m³)', data: dataWater, borderColor: '#3b82f6', backgroundColor: 'rgba(59, 130, 246, 0.1)', fill: true, tension: 0.3 }
         ]
       },
       options: { responsive: true, maintainAspectRatio: false }
