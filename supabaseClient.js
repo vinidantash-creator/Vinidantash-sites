@@ -2,6 +2,8 @@ const cfg = window.ECO_CONFIG || {};
 const hasConfig = cfg.SUPABASE_URL && !cfg.SUPABASE_URL.includes('SEU-PROJETO') && cfg.SUPABASE_PUBLISHABLE_KEY && !cfg.SUPABASE_PUBLISHABLE_KEY.includes('SUA_CHAVE');
 
 let supabaseClient = null;
+let chartInstance = null; // Variável global para gerenciar o gráfico
+
 if (hasConfig && typeof window.supabase !== 'undefined') {
   supabaseClient = window.supabase.createClient(cfg.SUPABASE_URL, cfg.SUPABASE_PUBLISHABLE_KEY);
 }
@@ -38,7 +40,7 @@ async function auth(action){
       : await supabaseClient.auth.signUp({email, password});
     
     if(r.error) throw r.error;
-   msg('authMsg', action === 'login' ? 'Autenticado com sucesso.' : '✅ Quase lá! Acesse sua caixa de e-mail e clique no link de confirmação para liberar o sistema.');
+    msg('authMsg', action === 'login' ? 'Autenticado com sucesso.' : '✅ Quase lá! Acesse sua caixa de e-mail e clique no link de confirmação para liberar o sistema.');
   } catch (err) {
     console.error("Erro de autenticação:", err);
     msg('authMsg', err.message || 'Falha de comunicação. Verifique a privacidade do navegador.');
@@ -112,18 +114,14 @@ $('saveConsent').onclick = async () => {
 // --- Automação Poka-Yoke: Cálculo Dinâmico de Metas ---
 $('people').addEventListener('input', (e) => {
   const quantidade = parseInt(e.target.value) || 0;
-  
   if (quantidade > 0) {
-    // Aplica o benchmark: 50 kWh/pessoa e 3,3 m³/pessoa
     $('energyTarget').value = (quantidade * 50);
     $('waterTarget').value = (quantidade * 3.3).toFixed(1);
   } else {
-    // Limpa os campos se o usuário apagar o número de moradores
     $('energyTarget').value = '';
     $('waterTarget').value = '';
   }
 });
-// --------------------------------------------------------
 
 async function loadUser(user){
   try {
@@ -159,6 +157,28 @@ function render(rows, p){
     $('history').appendChild(tr);
   });
   
+  // --- Motor do Gráfico Chart.js ---
+  const ctx = $('graficoConsumo');
+  if(ctx && rows.length > 0) {
+    if (chartInstance) chartInstance.destroy();
+    const plotRows = rows.slice().reverse(); 
+    const labels = plotRows.map(r => r.period.slice(0, 7));
+    const dataEnergy = plotRows.map(r => r.energy_kwh);
+    const dataWater = plotRows.map(r => r.water_m3);
+
+    chartInstance = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: labels,
+        datasets: [
+          { label: 'Energia (kWh)', data: dataEnergy, borderColor: '#10b981', backgroundColor: 'transparent', tension: 0.3 },
+          { label: 'Água (m³)', data: dataWater, borderColor: '#3b82f6', backgroundColor: 'transparent', tension: 0.3 }
+        ]
+      },
+      options: { responsive: true, maintainAspectRatio: false }
+    });
+  }
+
   const prev = rows[rows.length-2]; 
   let html = ''; 
   
