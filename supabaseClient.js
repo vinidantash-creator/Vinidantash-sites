@@ -109,6 +109,22 @@ $('saveConsent').onclick = async () => {
   }
 };
 
+// --- Automação Poka-Yoke: Cálculo Dinâmico de Metas ---
+$('people').addEventListener('input', (e) => {
+  const quantidade = parseInt(e.target.value) || 0;
+  
+  if (quantidade > 0) {
+    // Aplica o benchmark: 50 kWh/pessoa e 3,3 m³/pessoa
+    $('energyTarget').value = (quantidade * 50);
+    $('waterTarget').value = (quantidade * 3.3).toFixed(1);
+  } else {
+    // Limpa os campos se o usuário apagar o número de moradores
+    $('energyTarget').value = '';
+    $('waterTarget').value = '';
+  }
+});
+// --------------------------------------------------------
+
 async function loadUser(user){
   try {
     const {data:p} = await supabaseClient.from('profiles').select('*').eq('user_id',user.id).single();
