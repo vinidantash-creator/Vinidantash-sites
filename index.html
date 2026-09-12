@@ -5,6 +5,8 @@
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>EcoBairro — Gestão de Água e Energia</title>
   <link rel="stylesheet" href="style.css">
+  <!-- Chart.js importado corretamente dentro do head e sem caracteres extras -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
   <header class="topbar">
@@ -17,7 +19,6 @@
       <h1>Entrar no EcoBairro</h1>
       <p>Crie sua conta ou entre para registrar seu consumo.</p>
       
-      <!-- Formulário adicionado para resolver o aviso DOM do Chromium -->
       <form id="authForm" onsubmit="event.preventDefault();">
         <div class="grid2">
           <div>
@@ -83,6 +84,8 @@
       
       <section class="card">
         <h2>Histórico</h2>
+        <!-- Canvas de renderização do gráfico inserido logo acima da tabela -->
+        <canvas id="graficoConsumo" style="max-width: 100%; max-height: 300px; margin-top: 20px; margin-bottom: 20px;"></canvas>
         <div class="tablewrap">
           <table>
             <thead>
@@ -111,7 +114,6 @@
     </section>
   </main>
   
-  <!-- Scripts atualizados na ordem correta -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="config.js"></script>
   <script src="supabaseClient.js"></script>
