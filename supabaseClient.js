@@ -2,7 +2,8 @@ const cfg = window.ECO_CONFIG || {};
 const hasConfig = cfg.SUPABASE_URL && !cfg.SUPABASE_URL.includes('SEU-PROJETO') && cfg.SUPABASE_PUBLISHABLE_KEY && !cfg.SUPABASE_PUBLISHABLE_KEY.includes('SUA_CHAVE');
 
 let supabaseClient = null;
-let chartInstance = null; // Variável global para gerenciar o gráfico
+let chartInstance = null;
+let currentDataRows = []; 
 
 if (hasConfig && typeof window.supabase !== 'undefined') {
   supabaseClient = window.supabase.createClient(cfg.SUPABASE_URL, cfg.SUPABASE_PUBLISHABLE_KEY);
@@ -134,6 +135,7 @@ async function loadUser(user){
       $('shareConsent').checked = !!p.share_anonymized;
     }
     const {data:rows} = await supabaseClient.from('consumption_readings').select('*').eq('user_id',user.id).order('period',{ascending:true}); 
+    currentDataRows = rows || [];
     render(rows||[], p||{});
   } catch (err) {
     console.error("Erro ao carregar os dados:", err);
@@ -158,10 +160,9 @@ function render(rows, p){
   });
   
   // --- Motor do Gráfico Chart.js ---
-// --- Motor do Gráfico Chart.js ---
   const canvasEl = $('graficoConsumo');
   if(canvasEl && rows.length > 0) {
-    const ctx = canvasEl.getContext('2d'); // Força a renderização 2D
+    const ctx = canvasEl.getContext('2d'); 
     if (chartInstance) chartInstance.destroy();
     
     const plotRows = rows.slice().reverse(); 
@@ -199,6 +200,38 @@ function render(rows, p){
     }
   } 
   $('diagnosis').innerHTML = html;
+}
+
+// --- Exportação Excel (CSV) ---
+const btnExport = $('exportExcel');
+if(btnExport) {
+  btnExport.onclick = () => {
+    if(!currentDataRows || currentDataRows.length === 0) {
+      alert('Não há dados registrados para exportar.');
+      return;
+    }
+    
+    let csv = 'Mês/Ano;Energia (kWh);Água (m³);Custo Energia (R$);Custo Água (R$)\n';
+    
+    currentDataRows.forEach(r => {
+      const mes = r.period.slice(0,7);
+      const e = String(r.energy_kwh).replace('.', ',');
+      const a = String(r.water_m3).replace('.', ',');
+      const ce = String(r.energy_cost || 0).replace('.', ',');
+      const ca = String(r.water_cost || 0).replace('.', ',');
+      
+      csv += `${mes};${e};${a};${ce};${ca}\n`;
+    });
+    
+    const blob = new Blob([new Uint8Array([0xEF, 0xBB, 0xBF]), csv], { type: 'text/csv;charset=utf-8;' }); 
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', 'EcoBairro_MeuHistorico.csv');
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
 }
 
 async function showApp(user){
