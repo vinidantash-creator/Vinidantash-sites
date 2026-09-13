@@ -134,7 +134,7 @@ async function loadUser(user){
       $('waterTarget').value = p.water_target_m3??12;
       $('shareConsent').checked = !!p.share_anonymized;
     }
-    const {data:rows} = await supabaseClient.from('consumption_readings').select('*').eq('user_id',user.id).order('period',{ascending:true}); 
+    const {data:rows} = await supabaseClient.from('consumption_readings').select('*').eq('user_id',user.id); 
     currentDataRows = rows || [];
     render(rows||[], p||{});
   } catch (err) {
@@ -144,15 +144,19 @@ async function loadUser(user){
 
 function render(rows, p){
   $('history').innerHTML = ''; 
-  const last = rows[rows.length-1];
   
-  $('kEnergy').textContent = last ? `${Number(last.energy_kwh).toFixed(1)} kWh` : '—'; 
-  $('kWater').textContent = last ? `${Number(last.water_m3).toFixed(1)} m³` : '—'; 
-  $('kEnergyP').textContent = last ? `${(last.energy_kwh/(p.household_size||1)).toFixed(1)}` : '—'; 
-  $('kWaterP').textContent = last ? `${(last.water_m3/(p.household_size||1)).toFixed(1)}` : '—';
+  // Ordenação global estricta por string (Cronológica: Antigo -> Recente)
+  const chronologicalRows = [...rows].sort((a, b) => a.period.localeCompare(b.period));
+  const trueLast = chronologicalRows[chronologicalRows.length-1];
   
-  // Tabela: Mais recente no topo
-  rows.slice().reverse().forEach(r => {
+  $('kEnergy').textContent = trueLast ? `${Number(trueLast.energy_kwh).toFixed(1)} kWh` : '—'; 
+  $('kWater').textContent = trueLast ? `${Number(trueLast.water_m3).toFixed(1)} m³` : '—'; 
+  $('kEnergyP').textContent = trueLast ? `${(trueLast.energy_kwh/(p.household_size||1)).toFixed(1)}` : '—'; 
+  $('kWaterP').textContent = trueLast ? `${(trueLast.water_m3/(p.household_size||1)).toFixed(1)}` : '—';
+  
+  // Tabela: Inverte para o mais recente ficar no topo
+  const tableRows = [...chronologicalRows].reverse();
+  tableRows.forEach(r => {
     const okE = r.energy_kwh <= Number(p.energy_target_kwh||210);
     const okW = r.water_m3 <= Number(p.water_target_m3||12); 
     const tr = document.createElement('tr'); 
@@ -160,18 +164,15 @@ function render(rows, p){
     $('history').appendChild(tr);
   });
   
-  // --- Motor do Gráfico Chart.js (Ordenação cronológica estrita: Esquerda -> Direta / Antigo -> Recente) ---
+  // --- Motor do Gráfico Chart.js (Estritamente da esquerda para a direita: Antigo -> Recente) ---
   const canvasEl = $('graficoConsumo');
-  if(canvasEl && rows.length > 0) {
+  if(canvasEl && chronologicalRows.length > 0) {
     const ctx = canvasEl.getContext('2d'); 
     if (chartInstance) chartInstance.destroy();
     
-    // Ordena do mais antigo para o mais recente para o eixo ir da esquerda para a direita corretamente
-    const sortedRows = [...rows].sort((a, b) => new Date(a.period) - new Date(b.period));
-    
-    const labels = sortedRows.map(r => r.period.slice(0, 7));
-    const dataEnergy = sortedRows.map(r => r.energy_kwh);
-    const dataWater = sortedRows.map(r => r.water_m3);
+    const labels = chronologicalRows.map(r => r.period.slice(0, 7));
+    const dataEnergy = chronologicalRows.map(r => r.energy_kwh);
+    const dataWater = chronologicalRows.map(r => r.water_m3);
 
     chartInstance = new Chart(ctx, {
       type: 'line',
@@ -186,19 +187,19 @@ function render(rows, p){
     });
   }
 
-  const prev = rows[rows.length-2]; 
+  const prev = chronologicalRows[chronologicalRows.length-2]; 
   let html = ''; 
   
-  if(!last) {
+  if(!trueLast) {
     html = 'Registre uma leitura para receber um diagnóstico.'; 
   } else {
-    const energyDev = (last.energy_kwh/(p.energy_target_kwh||210)-1)*100;
-    const waterDev = (last.water_m3/(p.water_target_m3||12)-1)*100; 
+    const energyDev = (trueLast.energy_kwh/(p.energy_target_kwh||210)-1)*100;
+    const waterDev = (trueLast.water_m3/(p.water_target_m3||12)-1)*100; 
     html = `<strong>${energyDev<=0&&waterDev<=0?'🟢 Consumo controlado':'🟡 Há oportunidade de melhoria'}</strong><br>Energia: ${energyDev.toFixed(1)}% vs. meta. Água: ${waterDev.toFixed(1)}% vs. meta.`; 
     
     if(prev){
-      const de = (last.energy_kwh/prev.energy_kwh-1)*100;
-      const dw = (last.water_m3/prev.water_m3-1)*100; 
+      const de = (trueLast.energy_kwh/prev.energy_kwh-1)*100;
+      const dw = (trueLast.water_m3/prev.water_m3-1)*100; 
       html += `<br>Evolução vs. mês anterior: energia ${de>=0?'+':''}${de.toFixed(1)}%; água ${dw>=0?'+':''}${dw.toFixed(1)}%.`;
     }
   } 
