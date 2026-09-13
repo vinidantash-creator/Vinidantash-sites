@@ -151,7 +151,7 @@ function render(rows, p){
   $('kEnergyP').textContent = last ? `${(last.energy_kwh/(p.household_size||1)).toFixed(1)}` : '—'; 
   $('kWaterP').textContent = last ? `${(last.water_m3/(p.household_size||1)).toFixed(1)}` : '—';
   
-  // Tabela mantida do mais recente para o mais antigo
+  // Tabela: Mais recente no topo
   rows.slice().reverse().forEach(r => {
     const okE = r.energy_kwh <= Number(p.energy_target_kwh||210);
     const okW = r.water_m3 <= Number(p.water_target_m3||12); 
@@ -160,16 +160,18 @@ function render(rows, p){
     $('history').appendChild(tr);
   });
   
-  // --- Motor do Gráfico Chart.js (Corrigido para ordem cronológica: esquerda -> direita) ---
+  // --- Motor do Gráfico Chart.js (Ordenação cronológica estrita: Esquerda -> Direta / Antigo -> Recente) ---
   const canvasEl = $('graficoConsumo');
   if(canvasEl && rows.length > 0) {
     const ctx = canvasEl.getContext('2d'); 
     if (chartInstance) chartInstance.destroy();
     
-    // Usamos 'rows' diretamente (ordenado em ordem ascendente do banco)
-    const labels = rows.map(r => r.period.slice(0, 7));
-    const dataEnergy = rows.map(r => r.energy_kwh);
-    const dataWater = rows.map(r => r.water_m3);
+    // Ordena do mais antigo para o mais recente para o eixo ir da esquerda para a direita corretamente
+    const sortedRows = [...rows].sort((a, b) => new Date(a.period) - new Date(b.period));
+    
+    const labels = sortedRows.map(r => r.period.slice(0, 7));
+    const dataEnergy = sortedRows.map(r => r.energy_kwh);
+    const dataWater = sortedRows.map(r => r.water_m3);
 
     chartInstance = new Chart(ctx, {
       type: 'line',
