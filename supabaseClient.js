@@ -155,7 +155,7 @@ function render(rows, p){
     const okE = r.energy_kwh <= Number(p.energy_target_kwh||210);
     const okW = r.water_m3 <= Number(p.water_target_m3||12); 
     const tr = document.createElement('tr'); 
-    tr.innerHTML = `<td>${r.period.slice(0,7)}</td><td>${Number(r.energy_kwh).toFixed(1)} kWh</td><td>${Number(r.water_m3).toFixed(1)} m³</td><td>${okE&&okW?'🟢 Dentro da meta':(!okE&&!okW?'🔴 Acima nas duas':'🟡 Atenção')}</td>`; 
+    tr.innerHTML = `<td style="padding: 8px;">${r.period.slice(0,7)}</td><td style="padding: 8px;">${Number(r.energy_kwh).toFixed(1)} kWh</td><td style="padding: 8px;">${Number(r.water_m3).toFixed(1)} m³</td><td style="padding: 8px;">${okE&&okW?'🟢 Dentro da meta':(!okE&&!okW?'🔴 Acima nas duas':'🟡 Atenção')}</td>`; 
     $('history').appendChild(tr);
   });
   
