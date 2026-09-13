@@ -6,6 +6,7 @@
   <title>EcoBairro — Gestão de Água e Energia</title>
   <link rel="stylesheet" href="style.css">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <link rel="manifest" href="manifest.json">
 </head>
 <body>
   <header class="topbar">
@@ -83,10 +84,16 @@
         <div style="position: relative; height: 300px; width: 100%; margin: 20px 0;">
           <canvas id="graficoConsumo"></canvas>
         </div>
-        <div class="tablewrap">
-          <table>
+        <!-- Opção 1: Tabela com rolagem interna fixa -->
+        <div class="tablewrap" style="max-height: 250px; overflow-y: auto; border: 1px solid #e5e7eb; border-radius: 6px;">
+          <table style="width: 100%; border-collapse: collapse;">
             <thead>
-              <tr><th>Mês</th><th>Energia</th><th>Água</th><th>Status</th></tr>
+              <tr style="position: sticky; top: 0; background: #f9fafb; z-index: 1;">
+                <th style="padding: 8px; text-align: left;">Mês</th>
+                <th style="padding: 8px; text-align: left;">Energia</th>
+                <th style="padding: 8px; text-align: left;">Água</th>
+                <th style="padding: 8px; text-align: left;">Status</th>
+              </tr>
             </thead>
             <tbody id="history"></tbody>
           </table>
@@ -114,5 +121,13 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="config.js"></script>
   <script src="supabaseClient.js"></script>
+  
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('./sw.js')
+        .then(() => console.log('Service Worker registrado com sucesso.'))
+        .catch(err => console.error('Erro ao registrar Service Worker:', err));
+    }
+  </script>
 </body>
 </html>
