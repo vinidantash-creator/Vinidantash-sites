@@ -3,6 +3,7 @@ const hasConfig = cfg.SUPABASE_URL && !cfg.SUPABASE_URL.includes('SEU-PROJETO') 
 
 let supabaseClient = null;
 let chartInstance = null;
+let chartComparisonInstance = null;
 let currentDataRows = []; 
 
 if (hasConfig && typeof window.supabase !== 'undefined') {
@@ -137,6 +138,7 @@ async function loadUser(user){
     const {data:rows} = await supabaseClient.from('consumption_readings').select('*').eq('user_id',user.id); 
     currentDataRows = rows || [];
     render(rows||[], p||{});
+    loadComparison(user, p || {});
   } catch (err) {
     console.error("Erro ao carregar os dados:", err);
   }
@@ -145,7 +147,6 @@ async function loadUser(user){
 function render(rows, p){
   $('history').innerHTML = ''; 
   
-  // Ordenação global estricta por string (Cronológica: Antigo -> Recente)
   const chronologicalRows = [...rows].sort((a, b) => a.period.localeCompare(b.period));
   const trueLast = chronologicalRows[chronologicalRows.length-1];
   
@@ -154,7 +155,6 @@ function render(rows, p){
   $('kEnergyP').textContent = trueLast ? `${(trueLast.energy_kwh/(p.household_size||1)).toFixed(1)}` : '—'; 
   $('kWaterP').textContent = trueLast ? `${(trueLast.water_m3/(p.household_size||1)).toFixed(1)}` : '—';
   
-  // Tabela: Inverte para o mais recente ficar no topo
   const tableRows = [...chronologicalRows].reverse();
   tableRows.forEach(r => {
     const okE = r.energy_kwh <= Number(p.energy_target_kwh||210);
@@ -164,7 +164,6 @@ function render(rows, p){
     $('history').appendChild(tr);
   });
   
-  // --- Motor do Gráfico Chart.js (Estritamente da esquerda para a direita: Antigo -> Recente) ---
   const canvasEl = $('graficoConsumo');
   if(canvasEl && chronologicalRows.length > 0) {
     const ctx = canvasEl.getContext('2d'); 
@@ -204,6 +203,99 @@ function render(rows, p){
     }
   } 
   $('diagnosis').innerHTML = html;
+}
+
+// --- Motor do Índice Comparativo (Benchmarking Anônimo) ---
+async function loadComparison(user, p) {
+  const compCanvas = $('graficoComparativo');
+  const compMsg = $('comparativoMsg');
+  if(!compCanvas) return;
+
+  try {
+    const houseSize = p.household_size || 1;
+    const {data: peerProfiles, error: errProfiles} = await supabaseClient
+      .from('profiles')
+      .select('user_id')
+      .eq('household_size', houseSize)
+      .eq('share_anonymized', true);
+
+    if(errProfiles) throw errProfiles;
+
+    if(!peerProfiles || peerProfiles.length === 0) {
+      compMsg.innerHTML = `Ainda não há dados suficientes de outras residências com ${houseSize} morador(es) compartilhando no momento.`;
+      if(chartComparisonInstance) chartComparisonInstance.destroy();
+      return;
+    }
+
+    const peerIds = peerProfiles.map(item => item.user_id);
+
+    const {data: peerReadings, error: errReadings} = await supabaseClient
+      .from('consumption_readings')
+      .select('energy_kwh, water_m3, period')
+      .in('user_id', peerIds);
+
+    if(errReadings) throw errReadings;
+
+    if(!peerReadings || peerReadings.length === 0) {
+      compMsg.innerHTML = `Há perfis cadastrados com ${houseSize} morador(es), mas nenhum registrou consumo ainda.`;
+      return;
+    }
+
+    // Calcula a média geral do grupo de vizinhos com o mesmo tamanho de residência
+    const totalEnergy = peerReadings.reduce((acc, curr) => acc + Number(curr.energy_kwh), 0);
+    const totalWater = peerReadings.reduce((acc, curr) => acc + Number(curr.water_m3), 0);
+    const avgEnergy = totalEnergy / peerReadings.length;
+    const avgWater = totalWater / peerReadings.length;
+
+    // Pega o último consumo do usuário logado
+    const chronologicalRows = [...currentDataRows].sort((a, b) => a.period.localeCompare(b.period));
+    const userLast = chronologicalRows[chronologicalRows.length - 1];
+
+    if(!userLast) {
+      compMsg.innerHTML = `Registre sua leitura para visualizar o comparativo direto com a vizinhança.`;
+      return;
+    }
+
+    const ctx = compCanvas.getContext('2d');
+    if(chartComparisonInstance) chartComparisonInstance.destroy();
+
+    chartComparisonInstance = new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: ['Energia (kWh)', 'Água (m³)'],
+        datasets: [
+          {
+            label: 'Seu Último Consumo',
+            data: [userLast.energy_kwh, userLast.water_m3],
+            backgroundColor: '#10b981'
+          },
+          {
+            label: `Média Vizinhos (${houseSize} morador${houseSize > 1 ? 'es' : ''})`,
+            data: [avgEnergy.toFixed(1), avgWater.toFixed(1)],
+            backgroundColor: '#3b82f6'
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+          y: { beginAtZero: true }
+        }
+      }
+    });
+
+    const diffEnergy = ((userLast.energy_kwh / avgEnergy - 1) * 100).toFixed(1);
+    const diffWater = ((userLast.water_m3 / avgWater - 1) * 100).toFixed(1);
+
+    compMsg.innerHTML = `Comparativo para residências com <strong>${houseSize} morador(es)</strong>:<br>` +
+      `Sua energia está <strong>${diffEnergy >= 0 ? '+' + diffEnergy : diffEnergy}%</strong> em relação à média local.<br>` +
+      `Seu consumo de água está <strong>${diffWater >= 0 ? '+' + diffWater : diffWater}%</strong> em relação à média local.`;
+
+  } catch (err) {
+    console.error("Erro ao carregar comparativo:", err);
+    compMsg.innerHTML = "Não foi possível carregar os dados comparativos da vizinhança.";
+  }
 }
 
 // --- Exportação Excel (CSV) ---
