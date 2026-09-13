@@ -241,13 +241,11 @@ async function loadComparison(user, p) {
       return;
     }
 
-    // Calcula a média geral do grupo de vizinhos com o mesmo tamanho de residência
     const totalEnergy = peerReadings.reduce((acc, curr) => acc + Number(curr.energy_kwh), 0);
     const totalWater = peerReadings.reduce((acc, curr) => acc + Number(curr.water_m3), 0);
     const avgEnergy = totalEnergy / peerReadings.length;
     const avgWater = totalWater / peerReadings.length;
 
-    // Pega o último consumo do usuário logado
     const chronologicalRows = [...currentDataRows].sort((a, b) => a.period.localeCompare(b.period));
     const userLast = chronologicalRows[chronologicalRows.length - 1];
 
@@ -336,6 +334,29 @@ async function showApp(user){
   $('userLabel').textContent = user.email || 'Morador'; 
   await loadUser(user); 
   if(!$('month').value) $('month').value = new Date().toISOString().slice(0,7);
+}
+
+// --- Armadilha PWA (Botão Customizado de Instalação) ---
+let deferredPrompt;
+const installBtn = document.getElementById('installAppBtn');
+
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault();
+  deferredPrompt = e;
+  if(installBtn) installBtn.style.display = 'inline-block';
+});
+
+if(installBtn) {
+  installBtn.addEventListener('click', async () => {
+    if (deferredPrompt) {
+      deferredPrompt.prompt();
+      const { outcome } = await deferredPrompt.userChoice;
+      if (outcome === 'accepted') {
+        installBtn.style.display = 'none';
+      }
+      deferredPrompt = null;
+    }
+  });
 }
 
 boot();
