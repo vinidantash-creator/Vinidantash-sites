@@ -3,7 +3,7 @@ const ASSETS_TO_CACHE = [
   './',
   './index.html',
   './style.css',
-  './icon.png'
+  './Ecobairro-icone.ico'
 ];
 
 // Passo 1: Instalação - O celular baixa e guarda os arquivos do site
